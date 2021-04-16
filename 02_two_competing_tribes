@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+
+# there's a better formula for this...
+def food_production(gatherers)
+  t1 = 10
+  y1 = 3.0
+  t2 = 30
+  y2 = 1.0
+
+  ut = (y2-y1) / (t2-t1)
+
+  res = if gatherers <= t1
+    gatherers * y1
+  elsif gatherers <= t2
+    (t1 * y1) +
+    (t1+1..gatherers).map{|i| (y1+ut*(i-t1)) }.sum
+  else
+    (t1 * y1) +
+    (t1+1..t2).map{|i| (y1+ut*(i-t1)) }.sum +
+    (t2+1..gatherers).map{ y2 }.sum
+  end
+
+  res.round(6)
+end
+
+# Simulation
+tribe1 = 2
+tribe2 = 2
+
+1000.times do
+  food = food_production(tribe1 + tribe2)
+  food1 = (tribe1.to_f / (tribe1 + tribe2) * food).round(6)
+  food2 = (tribe2.to_f / (tribe1 + tribe2) * food).round(6)
+
+  need1 = tribe1 * 2.0
+  food_sat1 = (food1 / need1).round(3)
+
+  need2 = tribe2 * 2.0
+  food_sat2 = (food2 / need2).round(3)
+
+
+  p([
+    {
+      tribe: tribe1,
+      food: food1,
+      need: need1,
+      food_sat: food_sat1,
+    },
+    {
+      tribe: tribe2,
+      food: food2,
+      need: need2,
+      food_sat: food_sat2,
+    },
+    {
+      total: tribe1+tribe2,
+      food: food,
+    }
+  ])
+  # 10% of getting extra pop
+  if food_sat1 > 1.1
+    tribe1 += tribe1.times.count{ rand < 0.1 }
+  # 1% of each pop dying for each 1% under food_sat
+  elsif food_sat1 < 1.0
+    tribe1 -= tribe1.times.count{ rand < food_sat1 }
+  end
+
+  # 10% of getting extra pop
+  if food_sat2 > 1.1
+    tribe2 += tribe2.times.count{ rand < 0.1 }
+  # 1% of each pop dying for each 1% under food_sat
+  elsif food_sat2 < 1.0
+    tribe2 -= tribe2.times.count{ rand < food_sat2 }
+  end
+end

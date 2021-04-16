@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+# there's a better formula for this...
 def food_production(gatherers)
   t1 = 10
   y1 = 3.0
@@ -11,7 +12,6 @@ def food_production(gatherers)
   res = if gatherers <= t1
     gatherers * y1
   elsif gatherers <= t2
-    # there's a better formula for this...
     (t1 * y1) +
     (t1+1..gatherers).map{|i| (y1+ut*(i-t1)) }.sum
   else
