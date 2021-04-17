@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+class Region
+  def food_yield(tribe)
+    (
+      yield_function(tribe.gatherers, 10, 3.0, 40, 1.0) +
+      yield_function(tribe.hunters, 10, 5.0, 20, 1.0)
+    ).round(6)
+  end
+
+  private def yield_function(work, t1, y1, t2, y2)
+    ut = (y2-y1) / (t2-t1)
+
+    res = if work <= t1
+      work * y1
+    elsif work <= t2
+      w2 = work - t1
+      work * y1 + ut * (w2+1) * w2 / 2.0
+    else
+      w2 = t2 - t1
+      t2 * y1 + ut * (w2+1) * w2 / 2.0 + (work-t2) * y2
+    end
+
+    res.round(6)
+  end
+end
+
+class Tribe
+  attr_accessor :gatherers, :hunters, :food
+
+  def initialize(g, h)
+    @gatherers = g
+    @hunters = h
+  end
+
+  def size
+    hunters + gatherers
+  end
+
+  def food_need
+    size * 2.0
+  end
+
+  def food_sat
+    (food / food_need).round(3)
+  end
+
+  def simulate
+    sat = food_sat
+    if sat > 1.1
+      @gatherers += @gatherers.times.count{ rand < 0.1 }
+      @hunters += @hunters.times.count{ rand < 0.1 }
+    # 1% of each pop dying for each 1% under food_sat
+    elsif food_sat < 1.0
+      @gatherers -= @gatherers.times.count{ rand < sat }
+      @hunters -= @hunters.times.count{ rand < sat }
+    end
+  end
+
+  def report
+    puts "Tribe<#{gatherers},#{hunters}> - #{food}/#{food_need}"
+  end
+end
+
+tribe = Tribe.new(10, 10)
+region = Region.new
+
+1000.times do
+  tribe.food = region.food_yield(tribe)
+  tribe.report
+  tribe.simulate
+end
