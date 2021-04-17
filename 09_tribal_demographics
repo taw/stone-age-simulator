@@ -17,6 +17,7 @@ class Tribe
 
   def initialize(ages)
     @ages = ages.dup
+    @deaths = []
   end
 
   def work
@@ -45,7 +46,12 @@ class Tribe
       @ages += [0] * (0...fertile_women).count{ rand < 0.5 }
     end
     # Now kill 2% of people
-    @ages = @ages.select{|a| rand < 0.98}
+    @ages, deaths = @ages.partition{|a| rand < 0.98}
+    register_deaths(deaths)
+  end
+
+  def register_deaths(deaths)
+    @deaths.push *deaths
   end
 
   def count_elderly
@@ -56,13 +62,29 @@ class Tribe
     @ages.count{|age| (15..40).include?(age) }
   end
 
-  def could_children
+  def count_children
     @ages.count{|age| age < 15}
+  end
+
+  def count_deaths_elderly
+    @deaths.count{|age| age > 40 }
+  end
+
+  def count_deaths_adult
+    @deaths.count{|age| (15..40).include?(age) }
+  end
+
+  def count_deaths_children
+    @deaths.count{|age| age < 15}
   end
 
   def report
     # puts "#{self.class}<#{@ages}> #{food}/#{food_need}"
-    puts "#{self.class}<#{count_elderly}/#{count_adult}/#{could_children}> #{food}/#{food_need} (#{(100*food_sat).round}%)"
+    puts "#{self.class}<#{count_elderly}/#{count_adult}/#{count_children}> #{food}/#{food_need} (#{(100*food_sat).round}%)"
+  end
+
+  def report_deaths
+    puts "Deaths: <#{count_deaths_elderly}/#{count_deaths_adult}/#{count_deaths_children}>"
   end
 end
 
@@ -75,3 +97,4 @@ tribe = Tribe.new([15,15,15,15])
   tribe.report
   tribe.simulate
 end
+tribe.report_deaths
