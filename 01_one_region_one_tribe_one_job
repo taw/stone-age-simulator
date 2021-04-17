@@ -46,6 +46,6 @@ gatherers = 2
     gatherers += gatherers.times.count{ rand < 0.1 }
   # 1% of each pop dying for each 1% under food_sat
   elsif food_sat < 1.0
-    gatherers -= gatherers.times.count{ rand < food_sat }
+    gatherers -= gatherers.times.count{ rand > food_sat }
   end
 end

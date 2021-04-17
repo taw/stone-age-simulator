@@ -62,7 +62,7 @@ tribe2 = 2
     tribe1 += tribe1.times.count{ rand < 0.1 }
   # 1% of each pop dying for each 1% under food_sat
   elsif food_sat1 < 1.0
-    tribe1 -= tribe1.times.count{ rand < food_sat1 }
+    tribe1 -= tribe1.times.count{ rand > food_sat1 }
   end
 
   # 10% of getting extra pop
@@ -70,6 +70,6 @@ tribe2 = 2
     tribe2 += tribe2.times.count{ rand < 0.1 }
   # 1% of each pop dying for each 1% under food_sat
   elsif food_sat2 < 1.0
-    tribe2 -= tribe2.times.count{ rand < food_sat2 }
+    tribe2 -= tribe2.times.count{ rand > food_sat2 }
   end
 end

@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+
+class YieldFunction
+  attr_reader :t1, :y1, :t2, :y2, :ut
+
+  def initialize(t1, y1, t2, y2)
+    @t1 = t1
+    @y1 = y1
+    @t2 = t2
+    @y2 = y2
+    @ut = (y2-y1) / (t2-t1)
+  end
+
+  def call(work)
+    res = if work <= t1
+      work * y1
+    elsif work <= t2
+      w2 = work - t1
+      work * y1 + ut * (w2+1) * w2 / 2.0
+    else
+      w2 = t2 - t1
+      t2 * y1 + ut * (w2+1) * w2 / 2.0 + (work-t2) * y2
+    end
+    res.round(6)
+  end
+
+  def divide_yield(subwork)
+    total_work = subwork.sum.to_f
+    total_yield = call(total_work)
+    subwork.map{|wi|
+      (wi / total_work * total_yield).round(6)
+    }
+  end
+end
+
+class Region
+  def initialize
+    @gatherer_func = YieldFunction.new(20, 3.0, 40, 1.0)
+    @hunter_yields = YieldFunction.new(10, 5.0, 20, 1.0)
+  end
+
+  def yields(tribes)
+    gatherer_yields = @gatherer_func.divide_yield(tribes.map(&:gatherers))
+    hunter_yields = @hunter_yields.divide_yield(tribes.map(&:hunters))
+    gatherer_yields.zip(hunter_yields).map{|gi,hi| (gi+hi).round(6) }
+  end
+end
+
+class Tribe
+  attr_accessor :gatherers, :hunters, :food
+
+  def initialize(g, h)
+    @gatherers = g
+    @hunters = h
+  end
+
+  def size
+    hunters + gatherers
+  end
+
+  def food_need
+    size * 2.0
+  end
+
+  def food_sat
+    (food / food_need).round(3)
+  end
+
+  def simulate
+    sat = food_sat
+    if sat > 1.0
+      @gatherers += @gatherers.times.count{ rand < 0.05 }
+      @hunters += @hunters.times.count{ rand < 0.05 }
+    # 1% of each pop dying for each 1% under food_sat
+    elsif sat < 1.0
+      @gatherers -= @gatherers.times.count{ rand > sat }
+      @hunters -= @hunters.times.count{ rand > sat }
+    end
+  end
+
+  def report
+    puts "  Tribe<#{gatherers},#{hunters}> - #{food}/#{food_need}"
+  end
+end
+
+tribes = [
+  Tribe.new(20, 0),
+  Tribe.new(10, 10),
+  Tribe.new(0, 20),
+]
+
+region = Region.new
+
+1000.times do
+  food = region.yields(tribes)
+  tribes.zip(food).each{|t,f| t.food = f}
+  puts "Round:"
+  tribes.each{|t| t.report}
+  tribes.each{|t| t.simulate}
+end

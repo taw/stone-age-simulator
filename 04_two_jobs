@@ -52,8 +52,8 @@ class Tribe
       @hunters += @hunters.times.count{ rand < 0.1 }
     # 1% of each pop dying for each 1% under food_sat
     elsif food_sat < 1.0
-      @gatherers -= @gatherers.times.count{ rand < sat }
-      @hunters -= @hunters.times.count{ rand < sat }
+      @gatherers -= @gatherers.times.count{ rand > sat }
+      @hunters -= @hunters.times.count{ rand > sat }
     end
   end
 
