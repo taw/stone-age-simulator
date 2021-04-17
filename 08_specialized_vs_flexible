@@ -9,8 +9,8 @@ class Region
   end
 
   def yields(tribes)
-    g_bonus = 0.9 + 0.2 * rand
-    h_bonus = 0.9 + 0.2 * rand
+    g_bonus = 0.8 + 0.4 * rand
+    h_bonus = 0.8 + 0.4 * rand
 
     gatherer_yields = @gatherer_func.divide_yield(tribes.map(&:gatherer_work)).map{|x| x*g_bonus}
     hunter_yields = @hunter_func.divide_yield(tribes.map(&:hunter_work)).map{|x| x*h_bonus}
@@ -63,6 +63,24 @@ class Tribe
   end
 end
 
+class HunterTribe < Tribe
+  def hunter_work
+    1.05 * super
+  end
+end
+
+class GathererTribe < Tribe
+  def gatherer_work
+    1.05 * super
+  end
+end
+
+class TinyTribe < Tribe
+  def food_need
+    0.95 * super
+  end
+end
+
 tribes = [
   Tribe.new(20, 0),
   Tribe.new(10, 10),
@@ -71,10 +89,56 @@ tribes = [
 
 region = Region.new
 
-1000.times do
-  food = region.yields(tribes)
-  tribes.zip(food).each{|t,f| t.food = f}
-  puts "Round:"
+simulations = [
+  [
+    Tribe.new(20, 0),
+    Tribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    GathererTribe.new(20, 0),
+    Tribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    Tribe.new(20, 0),
+    GathererTribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    Tribe.new(20, 0),
+    HunterTribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    Tribe.new(20, 0),
+    Tribe.new(10, 10),
+    HunterTribe.new(0, 20),
+  ],
+  [
+    TinyTribe.new(20, 0),
+    Tribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    Tribe.new(20, 0),
+    TinyTribe.new(10, 10),
+    Tribe.new(0, 20),
+  ],
+  [
+    Tribe.new(20, 0),
+    Tribe.new(10, 10),
+    TinyTribe.new(0, 20),
+  ],
+].each do |tribes|
+  puts "Start:"
   tribes.each{|t| t.report}
-  tribes.each{|t| t.simulate}
+  1000.times do
+    food = region.yields(tribes)
+    tribes.zip(food).each{|t,f| t.food = f}
+    tribes.each{|t| t.simulate}
+  end
+  puts "End:"
+  tribes.each{|t| t.report}
+  puts ""
 end

@@ -56,7 +56,7 @@ class Tribe
   end
 
   def report
-    puts "  Tribe<#{gatherers},#{hunters}> - #{food}/#{food_need}"
+    puts "  #{self.class}<#{gatherers},#{hunters}> - #{food}/#{food_need.round(6)}"
   end
 end
 

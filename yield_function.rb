@@ -25,8 +25,13 @@ class YieldFunction
   def divide_yield(subwork)
     total_work = subwork.sum.to_f
     total_yield = call(total_work)
-    subwork.map{|wi|
-      (wi / total_work * total_yield).round(6)
-    }
+    # If everybody dies
+    if total_yield == 0.0
+      subwork.map{ 0 }
+    else
+      subwork.map{|wi|
+        (wi / total_work * total_yield).round(6)
+      }
+    end
   end
 end
