@@ -5,12 +5,15 @@ require_relative "./yield_function"
 class Region
   def initialize
     @gatherer_func = YieldFunction.new(20, 3.0, 40, 1.0)
-    @hunter_yields = YieldFunction.new(10, 5.0, 20, 1.0)
+    @hunter_func = YieldFunction.new(10, 5.0, 20, 1.0)
   end
 
   def yields(tribes)
-    gatherer_yields = @gatherer_func.divide_yield(tribes.map(&:gatherer_work))
-    hunter_yields = @hunter_yields.divide_yield(tribes.map(&:hunter_work))
+    g_bonus = 0.9 + 0.2 * rand
+    h_bonus = 0.9 + 0.2 * rand
+
+    gatherer_yields = @gatherer_func.divide_yield(tribes.map(&:gatherer_work)).map{|x| x*g_bonus}
+    hunter_yields = @hunter_func.divide_yield(tribes.map(&:hunter_work)).map{|x| x*h_bonus}
     gatherer_yields.zip(hunter_yields).map{|gi,hi| (gi+hi).round(6) }
   end
 end
