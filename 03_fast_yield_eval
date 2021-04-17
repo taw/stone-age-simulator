@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+def food_production(work)
+  t1 = 10
+  y1 = 3.0
+  t2 = 30
+  y2 = 1.0
+
+  ut = (y2-y1) / (t2-t1)
+
+  res = if work <= t1
+    work * y1
+  elsif work <= t2
+    (t1 * y1) +
+    (t1+1..work).map{|i| (y1+ut*(i-t1)) }.sum
+  else
+    (t1 * y1) +
+    (t1+1..t2).map{|i| (y1+ut*(i-t1)) }.sum +
+    (t2+1..work).map{ y2 }.sum
+  end
+
+  res.round(6)
+end
+
+# this should also work for fractional work
+def fast_food_production(work)
+  t1 = 10
+  y1 = 3.0
+  t2 = 30
+  y2 = 1.0
+
+  ut = (y2-y1) / (t2-t1)
+
+  res = if work <= t1
+    work * y1
+  elsif work <= t2
+    w2 = work - t1
+    work * y1 + ut * (w2+1) * w2 / 2.0
+  else
+    w2 = t2 - t1
+    t2 * y1 + ut * (w2+1) * w2 / 2.0 + (work-t2) * y2
+  end
+
+  res.round(6)
+end
+
+def debug_food_production
+  (0..100).each do |i|
+    p [i,
+      food_production(i),
+      fast_food_production(i),
+      food_production(i) == fast_food_production(i),
+      (food_production(i) - food_production(i-1)).round(6)
+    ]
+  end
+end
+
+debug_food_production
