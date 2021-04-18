@@ -15,61 +15,84 @@ end
 class Tribe
   attr_accessor :food
 
-  def initialize(ages)
-    @ages = ages.dup
-    @deaths = []
+  def initialize(*alive)
+    # elderly, adult, children
+    @alive = alive.dup
+    @deaths = [0, 0, 0]
   end
 
   def work
-    @ages.count{|age| age >= 15}
+    @alive[0] + @alive[1]
   end
 
   def food_need
-    @ages.size * 1.0
+    @alive.sum
   end
 
   def food_sat
+    return 0 if food_need == 0
     (food / food_need).round(3)
   end
 
   def simulate
     sat = food_sat
     # Everyone gets one year older
-    @ages.size.times{|i| @ages[i] += 1}
+    # So 1/15 advance to adult, 1/25 to elderly
+    @alive[1].times do |i|
+      if rand < (1.0 / 25.0)
+        @alive[0] += 1
+        @alive[1] -= 1
+      end
+    end
+    @alive[2].times do |i|
+      if rand < (1.0 / 15.0)
+        @alive[1] += 1
+        @alive[2] -= 1
+      end
+    end
+
     # Everyone is bigender for now
     # Ignore old man - young woman pairs
-    fertile_women = (@ages.count{|age| (15..40).include?(age) } / 2)
+    fertile_women = (@alive[1] / 2)
     # 20% below sat people just stop having babies
     if sat >= 0.8
-      # fertile women pregnant 25% of time
-      @ages += [0] * (0...fertile_women).count{ rand < 0.5 }
+      # fertile women pregnant 50% of time
+      @alive[2] += (0...fertile_women).count{ rand < 0.5 }
     end
-    # Now kill some of people
-    @ages, deaths = @ages.partition{|age| rand > death_chance(age, sat)}
-    register_deaths(deaths)
+
+    # Now kill some people
+    deaths0 = @alive[0].times.count{ rand < death_chance(0, sat) }
+    deaths1 = @alive[1].times.count{ rand < death_chance(1, sat) }
+    deaths2 = @alive[2].times.count{ rand < death_chance(2, sat) }
+    @deaths[0] += deaths0
+    @deaths[1] += deaths1
+    @deaths[2] += deaths2
+    @alive[0] -= deaths0
+    @alive[1] -= deaths1
+    @alive[2] -= deaths2
   end
 
-  def death_chance(age, sat)
+  def death_chance(age_group, sat)
     if sat < 0.5
-      if (15..40).include?(age)
+      if age_group == 1
         0.5
       else
         0.9
       end
     elsif sat < 0.8
-      if (15..40).include?(age)
+      if age_group == 1
         0.02
       else
         0.10
       end
     elsif sat < 1.0
-      if (15..40).include?(age)
+      if age_group == 1
         0.01
       else
         0.05
       end
     else
-      if (15..40).include?(age)
+      if age_group == 1
         0.0
       else
         0.02
@@ -77,32 +100,28 @@ class Tribe
     end
   end
 
-  def register_deaths(deaths)
-    @deaths.push *deaths
-  end
-
   def count_elderly
-    @ages.count{|age| age > 40 }
+    @alive[0]
   end
 
   def count_adult
-    @ages.count{|age| (15..40).include?(age) }
+    @alive[1]
   end
 
   def count_children
-    @ages.count{|age| age < 15}
+    @alive[2]
   end
 
   def count_deaths_elderly
-    @deaths.count{|age| age > 40 }
+    @deaths[0]
   end
 
   def count_deaths_adult
-    @deaths.count{|age| (15..40).include?(age) }
+    @deaths[1]
   end
 
   def count_deaths_children
-    @deaths.count{|age| age < 15}
+    @deaths[2]
   end
 
   def report
@@ -117,7 +136,7 @@ end
 
 region = Region.new
 # two pairs just in case someone dies too early
-tribe = Tribe.new([15,15,15,15])
+tribe = Tribe.new(0, 4, 0)
 
 1000.times do
   tribe.food = region.food(tribe)

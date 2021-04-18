@@ -9,3 +9,5 @@ Just some fun experiments.
 * 07 - +10% / -10% environmental fluctuation, it usually kills pure-hunter and pure-gatherer tribe, with mixed tribe the only survivor; sometimes 2/3 tribes survive, but mixed one has big advantage
 * 08 - +20%/-20% environmental fluctuation or +5% specialization bonus, which is stronger? outcomes seem too random, is die-off too fast?
 * 09 - simple demographics structure with constant death rate; way too many adult deaths
+* 10 - death chance dependent on age (0-14, 15-40, 41+)
+* 11 - count just age buckets instead of ages, with probabilistic age transitions
