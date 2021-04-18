@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+
+require_relative "./yield_function"
+
+class Region
+  def initialize
+    @gatherer_func = YieldFunction.new(20, 3.0, 60, 0.5)
+  end
+
+  def food(tribe)
+    @gatherer_func.call(tribe.work)
+  end
+end
+
+class Tribe
+  attr_accessor :food
+
+  def initialize(ages)
+    @ages = ages.dup
+    @deaths = []
+  end
+
+  def work
+    @ages.count{|age| age >= 15}
+  end
+
+  def food_need
+    @ages.size * 1.0
+  end
+
+  def food_sat
+    (food / food_need).round(3)
+  end
+
+  def simulate
+    sat = food_sat
+    # Everyone gets one year older
+    @ages.size.times{|i| @ages[i] += 1}
+    # Everyone is bigender for now
+    # Ignore old man - young woman pairs
+    fertile_women = (@ages.count{|age| (15..40).include?(age) } / 2)
+    # 20% below sat people just stop having babies
+    if sat >= 0.8
+      # fertile women pregnant 50% of time
+      # hmm, why 4 minimum to even reproduce?
+      @ages += [0] * (0...fertile_women).count{ rand < 0.5 }
+    end
+    # Now kill 2% of people
+    @ages, deaths = @ages.partition{|age| rand > death_chance(age, sat)}
+    register_deaths(deaths)
+  end
+
+  def death_chance(age, sat)
+    if sat < 0.5
+      if (15..40).include?(age)
+        0.5
+      else
+        0.9
+      end
+    elsif sat < 0.8
+      if (15..40).include?(age)
+        0.02
+      else
+        0.10
+      end
+    elsif sat < 1.0
+      if (15..40).include?(age)
+        0.01
+      else
+        0.05
+      end
+    else
+      if (15..40).include?(age)
+        0.0
+      else
+        0.02
+      end
+    end
+  end
+
+  def register_deaths(deaths)
+    @deaths.push *deaths
+  end
+
+  def count_elderly
+    @ages.count{|age| age > 40 }
+  end
+
+  def count_adult
+    @ages.count{|age| (15..40).include?(age) }
+  end
+
+  def count_children
+    @ages.count{|age| age < 15}
+  end
+
+  def count_deaths_elderly
+    @deaths.count{|age| age > 40 }
+  end
+
+  def count_deaths_adult
+    @deaths.count{|age| (15..40).include?(age) }
+  end
+
+  def count_deaths_children
+    @deaths.count{|age| age < 15}
+  end
+
+  def report
+    # puts "#{self.class}<#{@ages}> #{food}/#{food_need}"
+    puts "#{self.class}<#{count_elderly}/#{count_adult}/#{count_children}> #{food}/#{food_need} (#{(100*food_sat).round}%)"
+  end
+
+  def report_deaths
+    puts "Deaths: <#{count_deaths_elderly}/#{count_deaths_adult}/#{count_deaths_children}>"
+  end
+end
+
+region = Region.new
+# two pairs just in case someone dies too early
+tribe = Tribe.new([15,15,15,15])
+
+1000.times do
+  tribe.food = region.food(tribe)
+  tribe.report
+  tribe.simulate
+end
+tribe.report_deaths
