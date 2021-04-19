@@ -1,0 +1,136 @@
+#!/usr/bin/env ruby
+
+require_relative "./yield_function"
+require_relative "./random"
+
+class Region
+  def initialize
+    @gatherer_func = YieldFunction.new(100, 3.0, 200, 1.0)
+    @hunter_yields = YieldFunction.new(50, 5.0, 100, 1.0)
+  end
+
+  def yields(tribes)
+    gatherer_yields = @gatherer_func.divide_yield(tribes.map(&:gatherer_work))
+    hunter_yields = @hunter_yields.divide_yield(tribes.map(&:hunter_work))
+    gatherer_yields.zip(hunter_yields).map{|gi,hi| (gi+hi).round(6) }
+  end
+
+  def assign_food(tribes)
+    food = yields(tribes)
+    tribes.zip(food).each{|t,f| t.food = f}
+  end
+end
+
+class Tribe
+  attr_accessor :food
+
+  def initialize(g, h, c, f)
+    @gatherers = g
+    @hunters = h
+    @children = c
+    @fertility = f
+  end
+
+  def gatherer_work
+    @gatherers
+  end
+
+  def hunter_work
+    @hunters
+  end
+
+  def adults
+    @hunters + @gatherers
+  end
+
+  def size
+    @hunters + @gatherers + @children
+  end
+
+  # children eat less
+  def food_need
+    adults * 2.0 + @children * 1.0
+  end
+
+  def food_sat
+    return 0 unless food
+    @food_sat ||= (food / food_need).round(3)
+  end
+
+  def simulate
+    @food_sat = nil
+    simulate_deaths
+    simulate_maturity
+    simulate_births
+  end
+
+  def simulate_deaths
+    # 1% chance of death for every 4% chance of food deficiency
+    # (so people survive average of 4 years with zero food)
+    if food_sat < 1.0
+      starvation = (1-food_sat)/4.0
+    else
+      starvation = 0.0
+    end
+
+    # Hunters have more dangerous job and extra 1% death rate
+    @gatherers -= Random.events(@gatherers, 0.01 + starvation)
+    @hunters -= Random.events(@hunters, 0.02 + starvation)
+    @children -= Random.events(@children, 0.01 + starvation)
+  end
+
+  def simulate_maturity
+    # 15 years, one round a year
+    n = Random.events(@children, 1.0/15.0)
+    if size == 0
+      ph = 0
+    else
+      ph = @hunters / adults.to_f
+    end
+    nh = Random.events(n, ph)
+    ng = n - nh
+    @gatherers += ng
+    @hunters += nh
+    @children -= n
+  end
+
+  def simulate_births
+    if food_sat >= 1.0
+      fertility = 0.05
+    elsif food_sat >= 0.8
+      # 0.05 down to 0.01
+      fertility = (0.21 - food_sat/5.0).round(6)
+    else
+      fertility = 0.0
+    end
+    @children += Random.events(adults, fertility * @fertility)
+  end
+
+  def report
+    puts "  #{self.class}[#{@fertility}]<#{@gatherers},#{@hunters},#{@children}> - #{(food||0).round(3)}/#{food_need.round(3)} (#{((food_sat||0.0)*100.0).round(2)}%)"
+  end
+end
+
+region = Region.new
+tribes = [
+  Tribe.new(20, 20, 0, 2.0),
+  Tribe.new(20, 20, 0, 1.8),
+  Tribe.new(20, 20, 0, 1.6),
+  Tribe.new(20, 20, 0, 1.4),
+  Tribe.new(20, 20, 0, 1.2),
+  Tribe.new(20, 20, 0, 1.0),
+  Tribe.new(20, 20, 0, 0.8),
+  Tribe.new(20, 20, 0, 0.6),
+  Tribe.new(20, 20, 0, 0.4),
+  Tribe.new(20, 20, 0, 0.2),
+  Tribe.new(20, 20, 0, 0.1),
+  Tribe.new(20, 20, 0, 0.0),
+]
+
+tribes.each{|t| t.report}
+1000.times do
+puts "Round:"
+  region.assign_food(tribes)
+  tribes.each{|t| t.simulate}
+  tribes.each{|t| t.report}
+end

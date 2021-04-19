@@ -13,3 +13,4 @@ Just some fun experiments.
 * 11 - count just age buckets instead of ages, with probabilistic age transitions
 * 12 - #05 plus child as extra job in usual simulator; destabilizes tribes a bit due to non-working members; 2 or 3 tribes survive in good health
 * 13 - better demographic model, 2 tribes survive
+* 14 - tribes with different fertility - 1-3 survive of 12, but seems random which ones (except none below 0.4x)
