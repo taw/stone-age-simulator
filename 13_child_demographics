@@ -66,9 +66,15 @@ class Tribe
     # 1% chance of death for every 4% chance of food deficiency
     # (so people survive average of 4 years with zero food)
     if food_sat < 1.0
-      @gatherers -= Random.events(@gatherers, (1-food_sat)/4.0)
-      @hunters -= Random.events(@hunters, (1-food_sat)/4.0)
+      starvation = (1-food_sat)/4.0
+    else
+      starvation = 0.0
     end
+
+    # Hunters have more dangerous job and extra 1% death rate
+    @gatherers -= Random.events(@gatherers, 0.01 + starvation)
+    @hunters -= Random.events(@hunters, 0.02 + starvation)
+    @children -= Random.events(@children, 0.01 + starvation)
   end
 
   def simulate_maturity
@@ -88,8 +94,14 @@ class Tribe
 
   def simulate_births
     if food_sat >= 1.0
-      @children += Random.events(adults, 0.05)
+      fertility = 0.05
+    elsif food_sat >= 0.8
+      # 0.05 down to 0.01
+      fertility = (0.21 - food_sat/5.0).round(6)
+    else
+      fertility = 0.0
     end
+    @children += Random.events(adults, fertility)
   end
 
   def report

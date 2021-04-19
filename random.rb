@@ -1,7 +1,9 @@
-def random_event(prob)
-  rand < prob
-end
+class Random
+  def self.event(prob)
+    rand < prob
+  end
 
-def random_events(count, prob)
-  count.times.count{ rand < prob }
+  def self.events(count, prob)
+    count.times.count{ rand < prob }
+  end
 end
