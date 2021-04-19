@@ -33,3 +33,9 @@ Some design notes:
   * disease
 * other goods modify efficiency
   * dog trainer provides dogs for hunters etc.
+* who is the player?
+  * best idea is to make the player play as ancestral spirits
+  * deciding on:
+    * education of children
+    * migrations
+    * relationships with other tribes
