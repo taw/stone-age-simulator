@@ -81,12 +81,6 @@ class TinyTribe < Tribe
   end
 end
 
-tribes = [
-  Tribe.new(20, 0),
-  Tribe.new(10, 10),
-  Tribe.new(0, 20),
-]
-
 region = Region.new
 
 simulations = [
