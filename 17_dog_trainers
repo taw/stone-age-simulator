@@ -30,12 +30,18 @@ class Tribe
     @job_choices = job_choices.dup
   end
 
+  def dogs
+    # 1 dog trainer one can provide dogs for 5 hunters
+    @jobs[2] * 5
+  end
+
   def gatherer_work
     @jobs[0]
   end
 
   def hunter_work
-    @jobs[1]
+    dog_bonus = [dogs, @jobs[1]].min
+    @jobs[1] + dogs
   end
 
   def adults
@@ -48,7 +54,7 @@ class Tribe
 
   # children eat less
   def food_need
-    adults * 2.0 + @children * 1.0
+    adults * 2.0 + @children * 1.0 + dogs * 0.2
   end
 
   def food_sat
@@ -121,15 +127,13 @@ end
 
 region = Region.new
 tribes = [
-  Tribe.new(0, [30, 10], [0.8, 0.2]),
-  Tribe.new(0, [30, 10], [0.8, 0.2]),
-  Tribe.new(0, [30, 10], [0.8, 0.2]),
-  Tribe.new(0, [20, 20], [0.5, 0.5]),
-  Tribe.new(0, [20, 20], [0.5, 0.5]),
-  Tribe.new(0, [20, 20], [0.5, 0.5]),
-  Tribe.new(0, [10, 30], [0.2, 0.8]),
-  Tribe.new(0, [10, 30], [0.2, 0.8]),
-  Tribe.new(0, [10, 30], [0.2, 0.8]),
+  Tribe.new(0, [32, 10, 0], [0.8, 0.2, 0.0]),
+  Tribe.new(0, [21, 21, 0], [0.5, 0.5, 0.0]),
+  Tribe.new(0, [10, 32, 0], [0.2, 0.8, 0.0]),
+  # ratios for 5:1 target
+  Tribe.new(0, [30, 10, 2], [0.8, 0.2, 0.04]),
+  Tribe.new(0, [20, 20, 2], [0.5, 0.5, 0.10]),
+  Tribe.new(0, [10, 30, 2], [0.2, 0.8, 0.16]),
 ]
 
 tribes.each{|t| t.report}
