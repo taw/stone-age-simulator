@@ -17,3 +17,4 @@ Just some fun experiments.
 * 15 - children follow tribal traditions instead of copying what adults do (which is subject to severe drift); result is (hunter dominated) hunter-tradition tribe and either (gatherer dominated) gatherer-tradition or (de facto gatherer-exclusive) follow-adults tribe surviving, and the rest dying out
 * 16 - generalizes job system to make adding new jobs easier (except child job)
 * 17 - dogs and dog trainers; they help hunters; they make their tribe completely dominate
+* 18 - tribe with partial disease resistance; no surprise that lowest mortality tribes win
