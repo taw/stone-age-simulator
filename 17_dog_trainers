@@ -41,7 +41,7 @@ class Tribe
 
   def hunter_work
     dog_bonus = [dogs, @jobs[1]].min
-    @jobs[1] + dogs
+    @jobs[1] + dog_bonus
   end
 
   def adults

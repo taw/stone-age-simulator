@@ -16,6 +16,6 @@ Just some fun experiments.
 * 14 - tribes with different fertility - 1-3 survive of 12, but seems random which ones (except none below 0.4x)
 * 15 - children follow tribal traditions instead of copying what adults do (which is subject to severe drift); result is (hunter dominated) hunter-tradition tribe and either (gatherer dominated) gatherer-tradition or (de facto gatherer-exclusive) follow-adults tribe surviving, and the rest dying out
 * 16 - generalizes job system to make adding new jobs easier (except child job)
-* 17 - dogs and dog trainers; they help hunters; they make their tribe completely dominate
+* 17 - dogs and dog trainers; they help hunters; they make their tribe completely dominate hunter meta, but gatherer meta doesn't get any
 * 18 - tribe with partial disease resistance; no surprise that lowest mortality tribes win
-* 19 - refactoring engine and jobs classes
+* 19 - refactoring simulation engine
