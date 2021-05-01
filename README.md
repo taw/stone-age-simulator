@@ -21,3 +21,5 @@ Just some fun experiments.
 * 19 - refactoring simulation engine
 * 20 - refactoring jobs classes
 * 21 - clothes, fuel, and healthcare needed now; they only get included in job pool if it's ramped high enough
+* 22 - simple biome system
+* 23 - use biomes and fishers
