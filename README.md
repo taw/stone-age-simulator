@@ -20,3 +20,4 @@ Just some fun experiments.
 * 18 - tribe with partial disease resistance; no surprise that lowest mortality tribes win
 * 19 - refactoring simulation engine
 * 20 - refactoring jobs classes
+* 21 - clothes, fuel, and healthcare needed now; they only get included in job pool if it's ramped high enough
