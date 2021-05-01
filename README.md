@@ -19,3 +19,4 @@ Just some fun experiments.
 * 17 - dogs and dog trainers; they help hunters; they make their tribe completely dominate hunter meta, but gatherer meta doesn't get any
 * 18 - tribe with partial disease resistance; no surprise that lowest mortality tribes win
 * 19 - refactoring simulation engine
+* 20 - refactoring jobs classes

@@ -10,11 +10,20 @@ class Random
   # weights must be >= 0
   # can fail due to float rounding issues
   def self.weighted_choice(weights)
-    e = weights.sum.to_f
-    weights.each_with_index do |w, i|
-      return i if event(w / e)
-      e -= w
+    if weights.is_a?(Array)
+      e = weights.sum.to_f
+      weights.each_with_index do |w, i|
+        return i if event(w / e)
+        e -= w
+      end
+      raise "Random#weighted_choice fail"
+    else
+      e = weights.values.sum.to_f
+      weights.each do |key, w|
+        return key if event(w / e)
+        e -= w
+      end
+      raise "Random#weighted_choice fail"
     end
-    raise "Random#weighted_choice fail"
   end
 end
