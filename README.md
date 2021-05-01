@@ -18,3 +18,4 @@ Just some fun experiments.
 * 16 - generalizes job system to make adding new jobs easier (except child job)
 * 17 - dogs and dog trainers; they help hunters; they make their tribe completely dominate
 * 18 - tribe with partial disease resistance; no surprise that lowest mortality tribes win
+* 19 - refactoring engine and jobs classes
