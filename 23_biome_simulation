@@ -2,44 +2,7 @@
 
 require_relative "./yield_function"
 require_relative "./random"
-
-class Biome
-  attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
-
-  def initialize(hunting, gathering, fish, wood, pasture, disease)
-    @hunting = hunting
-    @gathering = gathering
-    @fish = fish
-    @wood = wood
-    @pasture = pasture
-    @disease = disease
-  end
-end
-
-Forest = Biome.new(100, 150, 10, 100, 20, 0.02)
-Swamp = Biome.new(100, 100, 100, 20, 10, 0.05)
-River = Biome.new(100, 100, 200, 10, 20, 0.01)
-Plains = Biome.new(200, 50, 10, 10, 100, 0.0)
-Hills = Biome.new(50, 50, 10, 10, 100, 0.0)
-Coast = Biome.new(50, 100, 100, 5, 20, 0.0)
-
-class Region
-  attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
-  attr_reader :gatherer_food, :hunter_food, :fisher_food
-
-  def initialize(biomes)
-    total = biomes.values.sum
-    [:hunting, :gathering, :fish, :wood, :pasture, :disease].each do |attr|
-      value = (biomes.map{|b,w| b.send(attr)*w}.sum.to_f / total).round(6)
-      instance_variable_set :"@#{attr}", value
-    end
-
-    @gatherer_food = YieldFunction.new(@gathering, 3.0, @gathering*4, 1.0)
-    @hunter_food = YieldFunction.new(@hunting, 5.0, @hunting*2, 1.0)
-    @fisher_food = YieldFunction.new(@fish, 5.0, @fish*2, 1.0)
-    # No use for wood / pasture yet
-  end
-end
+load "#{__dir__}/22_biomes"
 
 class Tribe
   attr_accessor :resources, :disease
@@ -265,7 +228,6 @@ class Simulation
     end
   end
 end
-
 
 region = Region.new(
   River => 10,
