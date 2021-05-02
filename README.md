@@ -24,3 +24,4 @@ Just some fun experiments.
 * 22 - simple biome system
 * 23 - use biomes and fishers
 * 24 - like previous but tribes have names now for more readable output
+* 25 - all tribes move from one random region to another random region

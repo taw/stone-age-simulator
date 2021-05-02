@@ -6,7 +6,8 @@ require_relative "./random"
 class Biome
   attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
 
-  def initialize(hunting, gathering, fish, wood, pasture, disease)
+  def initialize(name, hunting, gathering, fish, wood, pasture, disease)
+    @name = name
     @hunting = hunting
     @gathering = gathering
     @fish = fish
@@ -14,20 +15,30 @@ class Biome
     @pasture = pasture
     @disease = disease
   end
+
+  def to_s
+    @name
+  end
+
+  def inspect
+    to_s
+  end
 end
 
-Forest = Biome.new(100, 150, 10, 100, 20, 0.02)
-Swamp = Biome.new(100, 100, 100, 20, 10, 0.05)
-River = Biome.new(100, 100, 200, 10, 20, 0.01)
-Plains = Biome.new(200, 50, 10, 10, 100, 0.0)
-Hills = Biome.new(50, 50, 10, 10, 100, 0.0)
-Coast = Biome.new(50, 100, 100, 5, 20, 0.0)
+Forest = Biome.new("Forest", 100, 150, 10, 100, 20, 0.02)
+Swamp = Biome.new("Swamp", 100, 100, 100, 20, 10, 0.05)
+River = Biome.new("River", 100, 100, 200, 10, 20, 0.01)
+Plains = Biome.new("Plains", 200, 50, 10, 10, 100, 0.0)
+Hills = Biome.new("Hills", 50, 50, 10, 10, 100, 0.0)
+Coast = Biome.new("Coast", 50, 100, 100, 5, 20, 0.0)
 
 class Region
   attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
   attr_reader :gatherer_food, :hunter_food, :fisher_food
+  attr_reader :biomes
 
   def initialize(biomes)
+    @biomes = biomes
     total = biomes.values.sum
     [:hunting, :gathering, :fish, :wood, :pasture, :disease].each do |attr|
       value = (biomes.map{|b,w| b.send(attr)*w}.sum.to_f / total).round(6)
