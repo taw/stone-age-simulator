@@ -1,0 +1,262 @@
+#!/usr/bin/env ruby
+
+require_relative "./yield_function"
+require_relative "./random"
+load "#{__dir__}/22_biomes"
+
+class Tribe
+  attr_accessor :resources, :disease
+
+  # size_target is currently a suggestion
+  def initialize(size_target, name, job_choices)
+    @name = name
+    job_keys = [:gatherers, :hunters, :fisher, :dog_trainers, :healer]
+    @job_choices = job_keys.zip(job_choices).map{|k,jc| [k,jc]}.to_h
+    @children = 0
+    @jobs = @job_choices.map{|k,jc|
+      [k, (size_target * jc / job_choices.sum.to_f).ceil]
+    }.to_h
+    @resources = Hash.new(0)
+    @food_sat = 0.0
+    @fuel_sat = 0.0
+    @clothes_sat = 0.0
+    @healthcare_sat = 0.0
+  end
+
+  def reset_resources
+    @resources = Hash.new(0)
+  end
+
+  def calculate_dogs
+    # 1 dog trainer one can provide dogs for 5 hunters
+    @resources[:dogs] = @jobs[:dog_trainers] * 5
+  end
+
+  def calculate_healthcare
+    @resources[:healthcare] = @jobs[:healer] * 50.0
+  end
+
+  def gatherer_work
+    @jobs[:gatherers]
+  end
+
+  def hunter_work
+    dog_bonus = [@resources[:dogs], @jobs[:hunters]].min
+    @jobs[:hunters] + dog_bonus
+  end
+
+  def fisher_work
+    @jobs[:fisher]
+  end
+
+  def adults
+    @jobs.values.sum
+  end
+
+  def size
+    @jobs.values.sum + @children
+  end
+
+  def empty?
+    size == 0
+  end
+
+  # children eat less
+  def food_need
+    adults * 2.0 + @children * 1.0 + @resources[:dogs] * 0.2
+  end
+
+  def calculate_food_sat
+    @food_sat = (@resources[:food] / food_need).round(3)
+  end
+
+  def calculate_fuel_sat
+    @fuel_sat = @resources[:wood] / size
+  end
+
+  def calculate_clothes_sat
+    @clothes_sat = @resources[:clothes] / size
+  end
+
+  def calculate_healthcare_sat
+    @healthcare_sat = @resources[:healthcare] / size
+  end
+
+  def simulate
+    calculate_food_sat
+    calculate_fuel_sat
+    calculate_clothes_sat
+    calculate_healthcare_sat
+    simulate_deaths
+    simulate_maturity
+    simulate_births
+  end
+
+  def simulate_deaths
+    natural_causes = 0.01
+    lack_of_fuel = 0.01
+    lack_of_fuel = 0.01
+
+    # 1% chance of death for every 4% chance of food deficiency
+    # (so people survive average of 4 years with zero food)
+
+    lack_of_food = if @food_sat < 1.0
+      (1-@food_sat)/4.0
+    else
+      0.0
+    end
+
+    lack_of_fuel = if @fuel_sat < 1.0
+      0.01*(1-@fuel_sat)
+    else
+      0.0
+    end
+
+    lack_of_clothes = if @clothes_sat < 1.0
+      0.01*(1-@clothes_sat)
+    else
+      0.0
+    end
+
+    # Even full only prevents half of disease and accidents
+    healthcare_factor = if @healthcare_sat < 1.0
+      0.5 * (1.0 - @healthcare_sat)
+    else
+      0.5
+    end
+
+    # Hunters have more dangerous job and extra 1% death rate
+    @jobs.each_key do |key|
+      accident = 0.0
+      accident = 0.01 if key == :hunters # hunters
+      @jobs[key] -= Random.events(
+        @jobs[key],
+        natural_causes +
+        (disease + accident) * healthcare_factor +
+        lack_of_food +
+        lack_of_fuel +
+        lack_of_clothes
+      )
+    end
+    @children -= Random.events(
+      @children,
+      natural_causes +
+      disease * healthcare_factor +
+      lack_of_food +
+      lack_of_fuel +
+      lack_of_clothes
+    )
+  end
+
+  def simulate_maturity
+    # 15 years, one round a year
+    n = Random.events(@children, 1.0/15.0)
+    @children -= n
+
+    if adults == 0
+      # only children survived, all adults dead, make them gatherer
+      @jobs[:gatherers] += n
+      return
+    end
+
+    n.times do
+      i = Random.weighted_choice(@job_choices)
+      redo if @jobs[i] == 0 # can't teach this
+      @jobs[i] += 1
+    end
+  end
+
+  def simulate_births
+    if @food_sat >= 1.0
+      fertility = 0.05
+    elsif @food_sat >= 0.8
+      # 0.05 down to 0.01
+      fertility = (0.21 - @food_sat/5.0).round(6)
+    else
+      fertility = 0.0
+    end
+    @children += Random.events(adults, fertility)
+  end
+
+  def report
+    puts [
+      "  ",
+      self.class,
+      "[#{@name}]",
+      # "[#{@job_choices.select{|k,v| v!=0}.inspect}]",
+      "<#{@jobs.select{|k,v| v!=0}.inspect};#{@children}>",
+      " - ",
+      "#{@resources.select{|k,v| v!=0}.inspect}",
+      " (",
+      "Food=", (@food_sat*100.0).round, "%, ",
+      "Fuel=", (@fuel_sat*100.0).round, "%, ",
+      "Clothes=", (@clothes_sat*100.0).round, "%, ",
+      "Healthcare=", (@healthcare_sat*100.0).round, "%)",
+    ].join
+  end
+end
+
+class Simulation
+  attr_reader :region, :tribes
+
+  def initialize(region, tribes)
+    @region = region
+    @tribes = tribes
+  end
+
+  def simulate_round
+    gatherer_food = region.gatherer_food.divide_yield(tribes.map(&:gatherer_work))
+    hunter_food = region.hunter_food.divide_yield(tribes.map(&:hunter_work))
+    fisher_food = region.fisher_food.divide_yield(tribes.map(&:fisher_work))
+    tribes.zip(gatherer_food, hunter_food, fisher_food).each do |t, gf, hf, ff|
+      next if t.empty?
+      t.reset_resources
+      t.calculate_dogs
+      t.disease = region.disease
+      t.resources[:food] = (gf + hf + ff).round(6)
+      t.resources[:wood] = (gf * 5.0).round(6)
+      t.resources[:clothes] = (hf * 5.0).round(6)
+      t.calculate_healthcare
+      t.simulate
+      t.report
+    end
+  end
+
+  def call
+    tribes.each{|t| t.report}
+    2000.times do |i|
+      puts "Round #{i+1}:"
+      simulate_round
+    end
+  end
+end
+
+region = Region.new(
+  River => 10,
+  Swamp => 20,
+  Forest => 60,
+  Plains => 10,
+)
+
+tribes = [
+  Tribe.new(100, "Fishers", [0.2, 0.2, 0.6, 0.0, 0.0]),
+
+  Tribe.new(200, "Gatherers", [1.0, 0.0, 0.0, 0.0, 0.00]),
+  Tribe.new(200, "80% Gatherers", [0.8, 0.2, 0.0, 0.0, 0.00]),
+  Tribe.new(200, "50:50", [0.5, 0.5, 0.0, 0.0, 0.00]),
+  Tribe.new(200, "80% Hunters", [0.2, 0.8, 0.0, 0.0, 0.00]),
+  Tribe.new(200, "Gatherers + Dogs", [0.8, 0.2, 0.0, 0.04, 0.00]),
+  Tribe.new(200, "80% Gatherers + Dogs", [0.5, 0.5, 0.0, 0.10, 0.00]),
+  Tribe.new(200, "50:50 + Dogs", [0.2, 0.8, 0.0, 0.16, 0.00]),
+  Tribe.new(200, "80% Hunters + Dogs", [0.0, 0.8, 0.0, 0.16, 0.00]),
+
+  Tribe.new(200, "Gatherers + Doctors", [1.0, 0.0, 0.0, 0.0, 0.04]),
+  Tribe.new(200, "80% Gatherers + Doctors", [0.8, 0.2, 0.0, 0.0, 0.04]),
+  Tribe.new(200, "50:50 + Doctors", [0.5, 0.5, 0.0, 0.0, 0.04]),
+  Tribe.new(200, "80% Hunters + Doctors", [0.2, 0.8, 0.0, 0.0, 0.04]),
+  Tribe.new(200, "Gatherers + Dogs + Doctors", [0.8, 0.2, 0.0, 0.04, 0.04]),
+  Tribe.new(200, "80% Gatherers + Dogs + Doctors", [0.5, 0.5, 0.0, 0.10, 0.04]),
+  Tribe.new(200, "50:50 + Dogs + Doctors", [0.2, 0.8, 0.0, 0.16, 0.04]),
+  Tribe.new(200, "80% Hunters + Dogs + Doctors", [0.0, 0.8, 0.0, 0.16, 0.04]),
+]
+Simulation.new(region, tribes).call

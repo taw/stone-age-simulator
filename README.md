@@ -23,3 +23,4 @@ Just some fun experiments.
 * 21 - clothes, fuel, and healthcare needed now; they only get included in job pool if it's ramped high enough
 * 22 - simple biome system
 * 23 - use biomes and fishers
+* 24 - like previous but tribes have names now for more readable output
