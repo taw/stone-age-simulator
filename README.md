@@ -25,3 +25,4 @@ Just some fun experiments.
 * 23 - use biomes and fishers
 * 24 - like previous but tribes have names now for more readable output
 * 25 - all tribes move from one random region to another random region
+* 26 - refactoring Float#clamp01 to simplify some sat code

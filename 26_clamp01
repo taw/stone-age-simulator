@@ -98,30 +98,11 @@ class Tribe
     # 1% chance of death for every 4% chance of food deficiency
     # (so people survive average of 4 years with zero food)
 
-    lack_of_food = if @food_sat < 1.0
-      (1-@food_sat)/4.0
-    else
-      0.0
-    end
-
-    lack_of_fuel = if @fuel_sat < 1.0
-      0.01*(1-@fuel_sat)
-    else
-      0.0
-    end
-
-    lack_of_clothes = if @clothes_sat < 1.0
-      0.01*(1-@clothes_sat)
-    else
-      0.0
-    end
-
+    lack_of_food = (1 - @food_sat.clamp01) / 4.0
+    lack_of_fuel = 0.01*(1-@fuel_sat.clamp01)
+    lack_of_clothes = 0.01*(1-@clothes_sat.clamp01)
     # Even full only prevents half of disease and accidents
-    healthcare_factor = if @healthcare_sat < 1.0
-      0.5 * (1.0 - @healthcare_sat)
-    else
-      0.5
-    end
+    healthcare_factor = 0.5 * (1.0 - @healthcare_sat.clamp01)
 
     # Hunters have more dangerous job and extra 1% death rate
     @jobs.each_key do |key|
@@ -197,8 +178,30 @@ end
 class Simulation
   attr_reader :region, :tribes
 
-  def initialize(region, tribes)
-    @region = region
+  def initialize(tribes)
+    @regions = [
+      # jungle
+      Region.new(
+        River => 10,
+        Swamp => 20,
+        Forest => 60,
+        Plains => 10,
+      ),
+      # open hills
+      Region.new(
+        Plains => 30,
+        Hills => 50,
+        Forest => 10,
+      ),
+      # forested coastline
+      Region.new(
+        Coast => 50,
+        Hills => 20,
+        Forest => 20,
+        River => 10,
+      ),
+    ]
+
     @tribes = tribes
   end
 
@@ -222,19 +225,19 @@ class Simulation
 
   def call
     tribes.each{|t| t.report}
+    @region = nil
     2000.times do |i|
+      if i % 20 == 0
+        @region = @regions.sample
+        puts ""
+        puts "Changing region to: #{@region.biomes}"
+      end
       puts "Round #{i+1}:"
       simulate_round
     end
   end
 end
 
-region = Region.new(
-  River => 10,
-  Swamp => 20,
-  Forest => 60,
-  Plains => 10,
-)
 
 tribes = [
   Tribe.new(100, "Fishers", [0.2, 0.2, 0.6, 0.0, 0.0]),
@@ -257,4 +260,4 @@ tribes = [
   Tribe.new(200, "50:50 + Dogs + Doctors", [0.2, 0.8, 0.0, 0.16, 0.04]),
   Tribe.new(200, "80% Hunters + Dogs + Doctors", [0.0, 0.8, 0.0, 0.16, 0.04]),
 ]
-Simulation.new(region, tribes).call
+Simulation.new(tribes).call

@@ -93,8 +93,6 @@ class Tribe
 
   def simulate_deaths
     natural_causes = 0.01
-    lack_of_fuel = 0.01
-    lack_of_fuel = 0.01
 
     # 1% chance of death for every 4% chance of food deficiency
     # (so people survive average of 4 years with zero food)

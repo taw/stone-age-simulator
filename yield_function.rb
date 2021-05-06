@@ -1,3 +1,15 @@
+class Float
+  def clamp01
+    if self <= 0
+      0.0
+    elsif self >= 1
+      1.0
+    else
+      self
+    end
+  end
+end
+
 class YieldFunction
   attr_reader :t1, :y1, :t2, :y2, :ut
 
