@@ -27,3 +27,4 @@ Just some fun experiments.
 * 25 - all tribes move from one random region to another random region
 * 26 - refactoring Float#clamp01 to simplify some sat code
 * 27 - sat refactoring
+* 28 - event system for only periodic status printing
