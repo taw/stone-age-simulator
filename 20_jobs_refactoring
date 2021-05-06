@@ -136,15 +136,16 @@ class Simulation
   end
 
   def simulate_round
+    tribes.each do |t|
+      t.reset_resources
+      t.calculate_dogs
+    end
     gatherer_food = region.gatherer_food.divide_yield(tribes.map(&:gatherer_work))
     hunter_food = region.hunter_food.divide_yield(tribes.map(&:hunter_work))
     tribes.zip(gatherer_food, hunter_food).each do |t, gf, hf|
-      next if t.empty?
-      t.reset_resources
-      t.calculate_dogs
       t.resources[:food] = (gf + hf).round(6)
       t.simulate
-      t.report
+      t.report unless t.empty?
     end
   end
 
