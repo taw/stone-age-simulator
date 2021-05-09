@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+
+require_relative "./yield_function"
+require_relative "./random"
+
+class Biome
+  attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
+
+  def initialize(name, hunting, gathering, fish, wood, pasture, disease)
+    @name = name
+    @hunting = hunting
+    @gathering = gathering
+    @fish = fish
+    @wood = wood
+    @pasture = pasture
+    @disease = disease
+  end
+
+  def to_s
+    @name
+  end
+
+  def inspect
+    to_s
+  end
+end
+
+Forest = Biome.new("Forest", 100, 150, 10, 100, 20, 0.02)
+Swamp = Biome.new("Swamp", 100, 100, 100, 20, 10, 0.05)
+River = Biome.new("River", 100, 100, 200, 10, 20, 0.01)
+Plains = Biome.new("Plains", 200, 50, 10, 10, 100, 0.0)
+Hills = Biome.new("Hills", 50, 50, 10, 10, 100, 0.0)
+Coast = Biome.new("Coast", 50, 100, 100, 5, 20, 0.0)
+
+class Region
+  attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
+  attr_reader :gatherer_food, :hunter_food, :fisher_food
+  attr_reader :biomes
+
+  private def recalculate
+    [:hunting, :gathering, :fish, :wood, :pasture, :disease].each do |attr|
+      value = (@land.map{|b| b.send(attr)}.sum.to_f / @land.size).round(6)
+      instance_variable_set :"@#{attr}", value
+    end
+
+    @gatherer_food = YieldFunction.new(@gathering, 3.0, @gathering*4, 1.0)
+    @hunter_food = YieldFunction.new(@hunting, 5.0, @hunting*2, 1.0)
+    @fisher_food = YieldFunction.new(@fish, 5.0, @fish*2, 1.0)
+    # No use for wood / pasture yet
+  end
+
+  def migrate
+    @land.shift
+    @land.push Random.weighted_choice(@biomes)
+    recalculate
+    self
+  end
+
+  def initialize(biomes)
+    @biomes = biomes
+    @land = 10.times.map{ Random.weighted_choice(@biomes) }
+    recalculate
+  end
+end
+
+region = Region.new(
+  Forest => 80,
+  Plains => 50,
+  Swamp => 20,
+  Hills => 20,
+  River => 10,
+  Coast => 10,
+)
+
+if $0 == __FILE__
+  pp region
+  pp region.migrate
+  pp region.migrate
+end
