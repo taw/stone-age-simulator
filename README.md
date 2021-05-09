@@ -28,4 +28,5 @@ Just some fun experiments.
 * 26 - refactoring Float#clamp01 to simplify some sat code
 * 27 - sat refactoring
 * 28 - event system for only periodic status printing
-* 29 - slow terrain changes
+* 29 - slow terrain changes biome system
+* 30 - slow terrain changes simulation

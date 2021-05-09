@@ -35,7 +35,7 @@ Coast = Biome.new("Coast", 50, 100, 100, 5, 20, 0.0)
 class Region
   attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
   attr_reader :gatherer_food, :hunter_food, :fisher_food
-  attr_reader :biomes
+  attr_reader :biomes, :land
 
   private def recalculate
     [:hunting, :gathering, :fish, :wood, :pasture, :disease].each do |attr|
@@ -63,16 +63,16 @@ class Region
   end
 end
 
-region = Region.new(
-  Forest => 80,
-  Plains => 50,
-  Swamp => 20,
-  Hills => 20,
-  River => 10,
-  Coast => 10,
-)
-
 if $0 == __FILE__
+  region = Region.new(
+    Forest => 80,
+    Plains => 50,
+    Swamp => 20,
+    Hills => 20,
+    River => 10,
+    Coast => 10,
+  )
+
   pp region
   pp region.migrate
   pp region.migrate
