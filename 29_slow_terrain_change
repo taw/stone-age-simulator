@@ -34,7 +34,7 @@ Coast = Biome.new("Coast", 50, 100, 100, 5, 20, 0.0)
 
 class Region
   attr_reader :hunting, :gathering, :fish, :wood, :pasture, :disease
-  attr_reader :gatherer_food, :hunter_food, :fisher_food
+  attr_reader :gatherer_food, :hunter_food, :fisher_food, :herder_pasture
   attr_reader :biomes, :land
 
   private def recalculate
@@ -46,7 +46,8 @@ class Region
     @gatherer_food = YieldFunction.new(@gathering, 3.0, @gathering*4, 1.0)
     @hunter_food = YieldFunction.new(@hunting, 5.0, @hunting*2, 1.0)
     @fisher_food = YieldFunction.new(@fish, 5.0, @fish*2, 1.0)
-    # No use for wood / pasture yet
+    @herder_pasture = YieldFunction.new(@pasture, 5.0, @pasture*2, 1.0)
+    # No use for wood yet
   end
 
   def migrate

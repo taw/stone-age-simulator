@@ -30,3 +30,4 @@ Just some fun experiments.
 * 28 - event system for only periodic status printing
 * 29 - slow terrain changes biome system
 * 30 - slow terrain changes simulation
+* 31 - sheep herders - hunter/gatherer/fisher/herder tribes - gatherers currently eventually die out
