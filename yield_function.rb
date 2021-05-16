@@ -37,7 +37,7 @@ class YieldFunction
   def divide_yield(subwork)
     total_work = subwork.sum.to_f
     total_yield = call(total_work)
-    # If everybody dies
+    # If nothing extracted, avoid dividing by zero
     if total_yield == 0.0
       subwork.map{ 0 }
     else
@@ -45,5 +45,9 @@ class YieldFunction
         (wi / total_work * total_yield).round(6)
       }
     end
+  end
+
+  def marginal_yield(total)
+    (call(total+1) - call(total)).round(6)
   end
 end
