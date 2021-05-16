@@ -32,3 +32,4 @@ Just some fun experiments.
 * 30 - slow terrain changes simulation
 * 31 - sheep herders - hunter/gatherer/fisher/herder tribes - gatherers currently eventually die out
 * 32 - display marginal food yields (total not per-tribe) for various professions - it's unclear why gatherer tribe always dies out while gatherers have such good marginal yield
+* 33 - display another marginal information

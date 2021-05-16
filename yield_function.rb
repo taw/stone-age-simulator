@@ -50,4 +50,10 @@ class YieldFunction
   def marginal_yield(total)
     (call(total+1) - call(total)).round(6)
   end
+
+  # This is what a 1-person tribe would get, a lot from other tribes,
+  # so not representative
+  def marginal_share(total)
+    (call(total+1) * 1.0 / total).round(6)
+  end
 end
