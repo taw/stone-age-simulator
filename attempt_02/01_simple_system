@@ -1,0 +1,181 @@
+#!/usr/bin/env ruby
+
+require_relative "./random"
+
+class Region
+  def initialize
+    @biome_types = [:forest, :river, :pasture, :plains]
+    @biomes = []
+    10.times{
+      @biomes << @biome_types.sample
+    }
+  end
+
+  def migrate
+    @biomes.shift
+    @biomes << @biome_types.sample
+  end
+
+  def max_gatherer
+    1000.0 * @biomes.count(:forest)
+  end
+
+  def max_hunter
+    1000.0 * @biomes.count(:plains)
+  end
+
+  def max_herder
+    1000.0 * @biomes.count(:pasture)
+  end
+
+  def max_fisher
+    1000.0 * @biomes.count(:river)
+  end
+
+  def inspect
+    "Region<#{@biomes.join(", ")}>"
+  end
+end
+
+class Tribe
+  attr_accessor :food
+
+  def initialize(size_target, name, job_choices)
+    @name = name
+    job_keys = [:gatherer, :hunter, :fisher, :herder]
+    @job_choices = job_keys.zip(job_choices).map{|k,jc| [k,jc]}.to_h
+    @jobs = @job_choices.map{|k,jc|
+      [k, (size_target * jc / job_choices.sum.to_f).ceil]
+    }.to_h
+    @food = 0.0
+  end
+
+  def gatherer
+    @jobs[:gatherer] || 0
+  end
+
+  def hunter
+    @jobs[:hunter] || 0
+  end
+
+  def herder
+    @jobs[:herder] || 0
+  end
+
+  def fisher
+    @jobs[:fisher] || 0
+  end
+
+  def size
+    @jobs.values.sum
+  end
+
+  def simulate_deaths
+    natural_causes = 0.01
+    # 1% chance of death for every 4% chance of food deficiency
+    # (so people survive average of 4 years with zero food)
+    lack_of_food = (1 - @food_sat.clamp01) / 4.0
+
+    @jobs.each_key do |key|
+      n = Random.events(@jobs[key], natural_causes + lack_of_food)
+      @jobs[key] -= n
+    end
+  end
+
+  # 50% female, birth every 4 years, 50% childhood survival
+  # so 0.5 * 0.25 * 0.5
+  def simulate_maturity
+    n = Random.events(size, 0.0625)
+    n.times do
+      key = Random.weighted_choice(@job_choices)
+      redo if @jobs[key] == 0 # can't teach this
+      @jobs[key] += 1
+    end
+  end
+
+  def simulate
+    @food_sat = (@food.to_f / size).round(6)
+    simulate_deaths
+    simulate_maturity
+  end
+
+  def report
+    puts [
+      "  ",
+      self.class,
+      "[#{@name}]",
+      "<",
+      @jobs.select{|k,v| v!=0}.map{|k,v| "#{k}=#{v}"}.join(", "),
+      ">",
+      "<",
+      "food=#{@food}",
+      ", ",
+      "sat=#{@food_sat}",
+      ">",
+    ].join
+  end
+end
+
+class Simulation
+  def initialize(tribes)
+    @region = Region.new
+    @tribes = tribes
+  end
+
+  def simulate_round
+    @total_gatherer = @tribes.map(&:gatherer).sum
+    @total_hunter = @tribes.map(&:hunter).sum
+    @total_herder = @tribes.map(&:herder).sum
+    @total_fisher = @tribes.map(&:fisher).sum
+
+    @yield_gatherer = [@region.max_gatherer, 10*@total_gatherer].min
+    @yield_hunter = [@region.max_hunter, 10*@total_hunter].min
+    @yield_herder = [@region.max_herder, 10*@total_herder].min
+    @yield_fisher = [@region.max_fisher, 10*@total_fisher].min
+
+    @yields_gatherer = divide_yields(@tribes.map(&:gatherer), @total_gatherer, @yield_gatherer)
+    @yields_hunter = divide_yields(@tribes.map(&:hunter), @total_hunter, @yield_hunter)
+    @yields_herder = divide_yields(@tribes.map(&:herder), @total_herder, @yield_herder)
+    @yields_fisher = divide_yields(@tribes.map(&:fisher), @total_fisher, @yield_fisher)
+
+    @tribes.zip(@yields_gatherer, @yields_hunter, @yields_herder, @yields_fisher).each do |t,ga,hu,he,fi|
+      t.food = ga + hu + he + fi
+      t.simulate
+    end
+  end
+
+  def divide_yields(shares, share_sum, total_yield)
+    if total_yield == 0
+      shares.map{ 0.0 }
+    else
+      shares.map{|s| (total_yield * s / share_sum).round(6) }
+    end
+  end
+
+  def call
+    puts "Start:"
+    @tribes.each{|t| t.report}
+
+    (1..10000).each do |i|
+      puts ""
+      puts "Round #{i}:"
+
+      if i % 20 == 1
+        @region.migrate
+        puts "  Changing region to: #{@region.inspect}"
+      end
+
+      simulate_round
+
+      @tribes.each{|t| t.report}
+    end
+  end
+end
+
+tribes = [
+  Tribe.new(100, "Gatherers", [1.0, 0.0, 0.0, 0.0]),
+  Tribe.new(100, "Hunters",   [0.0, 1.0, 0.0, 0.0]),
+  Tribe.new(100, "Fishers",   [0.0, 0.0, 1.0, 0.0]),
+  Tribe.new(100, "Herders",   [0.0, 0.0, 0.0, 1.0]),
+]
+Simulation.new(tribes).call

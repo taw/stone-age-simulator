@@ -5,3 +5,4 @@ Jobs:
 * dog trainer - trains dogs, they improve hunter efficiency
 * healer - provides healthcare, reducing natural causes and accidents deaths
 * fisher - gets food
+* herder - has sheep, gets food and clothes
