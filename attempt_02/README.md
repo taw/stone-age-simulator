@@ -8,3 +8,4 @@ Much simpler system.
 Experiments:
 
 * 01 - every pure tribe eventually dies out due to running into biomes that don't support them
+* 02 - mixed tribe is the only one that always survives
