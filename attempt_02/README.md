@@ -11,3 +11,4 @@ Experiments:
 * 02 - mixed tribe is the only one that always survives
 * 03 - every tribe survives if they're guaranteed some space
 * 04 - mixed tribe kills everyone even if there's guaranteed biomes
+* 05 - both mixed and adaptive survive; adaptive has extreme job swings
