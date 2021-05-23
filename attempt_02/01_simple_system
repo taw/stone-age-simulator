@@ -70,6 +70,10 @@ class Tribe
     @jobs.values.sum
   end
 
+  def empty?
+    size == 0
+  end
+
   def simulate_deaths
     natural_causes = 0.01
     # 1% chance of death for every 4% chance of food deficiency
@@ -167,7 +171,11 @@ class Simulation
 
       simulate_round
 
-      @tribes.each{|t| t.report}
+      @tribes.each{|t| t.report unless t.empty?}
+      if @tribes.all?(&:empty?)
+        puts "Everyone died"
+        break
+      end
     end
   end
 end
