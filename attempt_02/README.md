@@ -9,3 +9,5 @@ Experiments:
 
 * 01 - every pure tribe eventually dies out due to running into biomes that don't support them
 * 02 - mixed tribe is the only one that always survives
+* 03 - every tribe survives if they're guaranteed some space
+* 04 - mixed tribe kills everyone even if there's guaranteed biomes
