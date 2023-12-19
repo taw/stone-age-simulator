@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+
+require "set"
+
+class Tribe
+  attr_accessor :name, :energy, :biome, :techs
+
+  def initialize(name, biome)
+    @name = name
+    @energy = 100.0
+    @biome = biome
+    @techs = Set[]
+  end
+
+  def call
+    return if dead?
+    @energy -= rand * 2.2
+  end
+
+  def dead?
+    @energy < 0.0
+  end
+
+  def report
+    if dead?
+      puts "#{@name} in #{@biome.name} - DEAD"
+    else
+      puts "#{@name} in #{@biome.name} - #{@energy.round(2)}"
+    end
+  end
+end
+
+# It could have metadata like food availability, temperature etc.
+class Biome
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+end
+
+r = Biome.new("Forest")
+t1 = Tribe.new("Tribe 1", r)
+t2 = Tribe.new("Tribe 2", r)
+t3 = Tribe.new("Tribe 3", r)
+tribes = [t1, t2, t3]
+
+100.times do |i|
+  puts "Time #{i}"
+  tribes.each(&:call)
+  tribes.each(&:report)
+end
