@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+
+require "set"
+
+class Tribe
+  attr_reader :name
+  attr_accessor :energy, :biome, :techs
+
+  def initialize(name, biome, techs)
+    @name = name
+    @energy = 10.0
+    @biome = biome
+    @techs = techs
+  end
+
+  def call
+    return if dead?
+    # base resources
+    @energy += biome.energy
+    # base cost
+    @energy -= 1.0
+    # dangers avoidance techs
+    @biome.dangers.each do |d|
+      unless @techs.include?(d)
+        @energy -= 1.0
+      end
+    end
+    # generic adaptations
+    if @techs.include?(biome.name)
+      @energy += 1.0
+    end
+    # cap
+    if @energy >= 20.0
+      @energy = 20.0
+    end
+  end
+
+  def dead?
+    @energy < 0.0
+  end
+
+  def report
+    if dead?
+      puts "#{@name} (#{@techs.join(", ")}) in #{@biome.name} - DEAD"
+    else
+      puts "#{@name} (#{@techs.join(", ")}) in #{@biome.name} - #{@energy.round(2)}"
+    end
+  end
+end
+
+class Biome
+  attr_reader :name, :energy, :resources, :dangers
+
+  def initialize(name, energy, resources, dangers)
+    @name = name
+    @energy = energy # base value
+    @resources = resources
+    @dangers = dangers
+  end
+end
+
+class Simulation
+  def initialize
+    @biomes = [
+      Biome.new("Rainforest", 3.0, ["Wood", "Fruit", "Bamboo"], ["Predators"]),
+      Biome.new("Forest", 3.0, ["Wood", "Fruit"], ["Predators"]),
+      Biome.new("Hills", 2.0, ["Stone", "Wood"], ["Cold"]),
+      Biome.new("Mountain", 2.0, ["Stone"], ["Cold", "Low Oxygen"]),
+      Biome.new("Tundra", 1.0, ["Snow"], ["Cold"]),
+      Biome.new("Desert", 1.0, ["Sand"], ["Cold", "Heat"]),
+    ]
+    @techs = [
+      # adaptations to biomes
+      "Rainforest",
+      "Forest",
+      "Hills",
+      "Mountain",
+      "Tundra",
+      "Desert",
+      # adapation to danger
+      "Cold",
+      "Heat",
+      "Predators",
+      "Low Oxygen",
+      # resource techs
+      "Wood Tools",
+      "Bamboo Tools",
+      "Stone Tools",
+    ]
+  end
+
+  def random_tribe
+    Tribe.new("A Tribe", @biomes.sample, @techs.sample(3).to_set)
+  end
+
+  def call
+    @tribe = random_tribe
+    # there's no RNG, it's just up, even, or down trend
+    @tribe.call
+    @tribe.report
+  end
+end
+
+100.times do
+  Simulation.new.call
+end
