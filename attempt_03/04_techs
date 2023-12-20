@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+
+require "set"
+
+class Tribe
+  attr_accessor :name, :energy, :biome, :techs
+
+  def initialize(name, biome, techs)
+    @name = name
+    @energy = 10.0
+    @biome = biome
+    @techs = techs
+  end
+
+  def call
+    return if dead?
+    @energy += 1.0 + rand * 5.0
+    @energy -= biome.cost
+    if @techs.include?(biome.name)
+      @energy += 1.0
+    end
+    if @energy >= 10.0
+      @energy = 10.0
+    end
+  end
+
+  def dead?
+    @energy < 0.0
+  end
+
+  def report
+    if dead?
+      puts "#{@name} (#{@techs.join(", ")}) in #{@biome.name} - DEAD"
+    else
+      puts "#{@name} (#{@techs.join(", ")}) in #{@biome.name} - #{@energy.round(2)}"
+    end
+  end
+end
+
+class Biome
+  attr_reader :name, :cost
+
+  def initialize(name, cost)
+    @name = name
+    @cost = cost
+  end
+end
+
+class Simulation
+  def initialize
+    @biomes = [
+      Biome.new("Rainforest", 2.0),
+      Biome.new("Forest", 3.0),
+      Biome.new("Mountain", 4.0),
+      Biome.new("Tundra", 4.0),
+      Biome.new("Desert", 5.0),
+    ]
+    @techs = [
+      "Rainforest",
+      "Forest",
+      "Mountain",
+      "Tundra",
+      "Desert",
+    ]
+    @tribe_counter = 0
+    @tribes = []
+  end
+
+  def random_tribe
+    @tribe_counter += 1
+    Tribe.new("Tribe #{@tribe_counter}", @biomes.sample, Set[@techs.sample])
+  end
+
+  def call
+    10.times do
+      @tribes << random_tribe
+    end
+
+    50.times do |i|
+      puts "Time #{i}"
+      @tribes.each(&:call)
+      @tribes.each(&:report)
+      @tribes.delete_if(&:dead?)
+      @tribes << random_tribe while @tribes.size < 10
+    end
+  end
+end
+
+Simulation.new.call
