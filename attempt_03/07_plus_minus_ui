@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+
+require "set"
+
+module Colors
+  def self.red(str)
+    "\e[31m#{str}\e[0m"
+  end
+
+  def self.green(str)
+    "\e[32m#{str}\e[0m"
+  end
+
+  def self.yellow(str)
+    "\e[33m#{str}\e[0m"
+  end
+end
+
+class Tribe
+  attr_reader :name
+  attr_accessor :energy, :biome, :techs
+
+  def initialize(name, biome, techs)
+    @name = name
+    @energy = 10.0
+    @biome = biome
+    @techs = techs
+  end
+
+  def calculate_resources
+    @biome.resources
+  end
+
+  def calculate_energy_gain
+    result = 0.0
+    # base resources
+    result += biome.energy
+    # base cost
+    result -= 1.0
+    # dangers avoidance techs
+    @biome.dangers.each do |d|
+      unless @techs.include?(d)
+        result -= 1.0
+      end
+    end
+    # generic adaptations
+    if @techs.include?(biome.name)
+      result += 1.0
+    end
+    result
+  end
+
+  def call
+    return if dead?
+    @resources = calculate_resources
+    @last_energy_gain = calculate_energy_gain
+    @energy += @last_energy_gain
+    @energy = 20.0 if @energy > 20.0
+  end
+
+  def dead?
+    @energy <= 0.0
+  end
+
+  def report
+    header = "#{@name} in #{@biome.name}"
+    if @last_energy_gain > 0.0
+      puts "#{header}: +#{Colors.green(@last_energy_gain)}"
+    elsif @last_energy_gain == 0
+      puts "#{header}: #{Colors.yellow(@last_energy_gain)}"
+    else
+      puts "#{header}: #{Colors.red(@last_energy_gain)}"
+    end
+    puts "- #{@techs.to_a.join(", ")}"
+    puts "- #{@resources.to_a.join(", ")}"
+  end
+end
+
+class Biome
+  attr_reader :name, :energy, :resources, :dangers
+
+  def initialize(name, energy, resources, dangers)
+    @name = name
+    @energy = energy # base value
+    @resources = resources
+    @dangers = dangers
+  end
+end
+
+class Simulation
+  def initialize
+    @biomes = [
+      Biome.new("Rainforest", 3.0, ["Wood", "Fruit", "Bamboo"], ["Predators"]),
+      Biome.new("Forest", 3.0, ["Wood", "Fruit"], ["Predators"]),
+      Biome.new("Hills", 2.0, ["Stone", "Wood"], ["Cold"]),
+      Biome.new("Mountain", 2.0, ["Stone"], ["Cold", "Low Oxygen"]),
+      Biome.new("Tundra", 1.0, ["Snow"], ["Cold"]),
+      Biome.new("Desert", 1.0, ["Sand"], ["Cold", "Heat"]),
+    ]
+    @techs = [
+      # adaptations to biomes
+      "Rainforest",
+      "Forest",
+      "Hills",
+      "Mountain",
+      "Tundra",
+      "Desert",
+      # adapation to danger
+      "Cold",
+      "Heat",
+      "Predators",
+      "Low Oxygen",
+      # resource techs
+      "Wood Tools",
+      "Bamboo Tools",
+      "Stone Tools",
+    ]
+  end
+
+  def random_tribe
+    Tribe.new("A Tribe", @biomes.sample, @techs.sample(3).to_set)
+  end
+
+  def call
+    @tribe = random_tribe
+    # there's no RNG, it's just up, even, or down trend
+    @tribe.call
+    @tribe.report
+  end
+end
+
+100.times do
+  Simulation.new.call
+end
