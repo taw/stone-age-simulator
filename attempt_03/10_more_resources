@@ -1,0 +1,152 @@
+#!/usr/bin/env ruby
+
+require "set"
+require_relative "colors"
+
+BiomeTechs = [
+  "Rainforest",
+  "Forest",
+  "Hills",
+  "Mountain",
+  "Tundra",
+  "Desert",
+
+]
+DangerTechs = [
+  "Cold",
+  "Heat",
+  "Predators",
+  "Low Oxygen",
+]
+ResourceTechs = [
+  ["Wood Tools", "Wood", "Tools"],
+  ["Stone Tools", "Stone", "Tools"],
+  ["Bamboo Tools", "Bamboo", "Tools"],
+  ["Tin Mining", "Tin Deposits", "Tin Ore"],
+  ["Copper Mining", "Copper Deposits", "Copper Ore"],
+  ["Glass Making", "Sand", "Glass"],
+  ["Tin Smelting", "Tin Ore", "Tin"],
+  ["Copper Smelting", "Copper Ore", "Copper"],
+  ["Charcoal Making", "Wood", "Charcoal"],
+]
+TechPool = BiomeTechs + DangerTechs + ResourceTechs.map(&:first)
+
+class Tribe
+  attr_reader :name
+  attr_accessor :energy, :biome, :techs
+
+  def initialize(name, biome, techs)
+    @name = name
+    @energy = 10.0
+    @biome = biome
+    @techs = techs
+  end
+
+  def calculate_resources
+    # Needs to be done in speific order
+    @resources = @biome.resources.dup.to_set
+    ResourceTechs.each do |tech, input, output|
+      if @resources.include?(input) and @techs.include?(tech)
+        @techs_used << tech
+        @resources_used << input
+        @resources << output
+      end
+    end
+  end
+
+  def calculate_energy_gain
+    result = 0.0
+    # base resources
+    if @resources.include?("Tools")
+      @resources_used << "Tools"
+      result += biome.energy * 2
+    else
+      result += biome.energy
+    end
+    # base cost
+    result -= 1.0
+    # dangers avoidance techs
+    @biome.dangers.each do |d|
+      if @techs.include?(d)
+        @techs_used << d
+        @dangers_countered << d
+      else
+        result -= 1.0
+      end
+    end
+    # generic adaptations
+    if @techs.include?(biome.name)
+      @techs_used << biome.name
+      result += 1.0
+    end
+    result
+  end
+
+  def call
+    return if dead?
+    @techs_used = Set[]
+    @dangers_countered = Set[]
+    @resources_used = Set[]
+    calculate_resources
+    @last_energy_gain = calculate_energy_gain
+    @energy += @last_energy_gain
+    @energy = 20.0 if @energy > 20.0
+  end
+
+  def dead?
+    @energy <= 0.0
+  end
+
+  def report
+    header = "#{@name} in #{@biome.name}"
+    if @last_energy_gain > 0.0
+      puts "#{header}: +#{Colors.green(@last_energy_gain)}"
+    elsif @last_energy_gain == 0
+      puts "#{header}: #{Colors.yellow(@last_energy_gain)}"
+    else
+      puts "#{header}: #{Colors.red(@last_energy_gain)}"
+    end
+    puts "- #{@techs.to_a.map{|t| @techs_used.include?(t) ? Colors.green(t) : t}.join(", ")}"
+    puts "- #{@resources.to_a.map{|r| @resources_used.include?(r) ? Colors.green(r) : r}.join(", ")}"
+    puts "- #{@biome.dangers.to_a.map{|d| @dangers_countered.include?(d) ? d : Colors.red(d)}.join(", ")}"
+  end
+end
+
+class Biome
+  attr_reader :name, :energy, :resources, :dangers
+
+  def initialize(name, energy, resources, dangers)
+    @name = name
+    @energy = energy # base value
+    @resources = resources
+    @dangers = dangers
+  end
+end
+
+class Simulation
+  def initialize
+    @biomes = [
+      Biome.new("Rainforest", 3.0, ["Wood", "Fruit", "Bamboo", "Small Animals"], ["Predators"]),
+      Biome.new("Forest", 3.0, ["Wood", "Fruit", "Small Animals", "Big Animals"], ["Predators"]),
+      Biome.new("Hills", 2.0, ["Stone", "Wood", "Pastures"], ["Cold"]),
+      Biome.new("Mountain", 2.0, ["Stone", "Copper Deposits", "Tin Deposits"], ["Cold", "Low Oxygen"]),
+      Biome.new("Tundra", 1.0, ["Snow", "Big Animals"], ["Cold"]),
+      Biome.new("Desert", 1.0, ["Sand"], ["Cold", "Heat"]),
+    ]
+  end
+
+  def random_tribe
+    Tribe.new("A Tribe", @biomes.sample, TechPool.sample(3).to_set)
+  end
+
+  def call
+    @tribe = random_tribe
+    # there's no RNG, it's just up, even, or down trend
+    @tribe.call
+    @tribe.report
+  end
+end
+
+100.times do
+  Simulation.new.call
+end
