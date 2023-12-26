@@ -1,0 +1,220 @@
+#!/usr/bin/env ruby
+
+require "set"
+require_relative "colors"
+
+BiomeTechs = [
+  "Rainforest",
+  "Forest",
+  "Hills",
+  "Mountain",
+  "Tundra",
+  "Desert",
+  "Coast",
+  "River",
+  "Swamp",
+  "Savannah",
+]
+DangerAvoidance = {
+  "Cold" => {"Clothes" => 0.5, "Houses" => 0.5},
+  "Heat" => {"Houses" => 0.5},
+  "Predators" => {"Houses" => 0.5, "Weapons" => 0.5},
+  "Low Oxygen" => {},
+  "Sharks" => {"Boats" => 0.5},
+  "Storms" => {"Houses" => 0.5},
+}
+ResourceTechs = [
+  ["Wood Tools", ["Wood"], "Tools"],
+  ["Stone Tools", ["Stone"], "Tools"],
+  ["Bamboo Tools", ["Bamboo"], "Tools"],
+  ["Tin Mining", ["Tin Deposits", "Tools"], "Tin Ore"],
+  ["Copper Mining", ["Copper Deposits", "Tools"], "Copper Ore"],
+  ["Glass Making", ["Sand", "Wood"], "Glass"],
+  ["Tin Smelting", ["Tin Ore", "Wood"], "Tin"],
+  ["Copper Smelting", ["Copper Ore", "Wood"], "Copper"],
+  ["Charcoal Making", ["Wood"], "Charcoal"],
+  ["Pottery", ["Clay"], "Pots"],
+  ["Beer Making", ["Fruit", "Pots"], "Beer"],
+  ["Boat Making", ["Wood"], "Boats"],
+  ["Clay Bricks", ["Clay", "Wood"], "Bricks"],
+  ["Mud Bricks", ["Mud", "Wood"], "Bricks"],
+  ["Brick Huts", ["Bricks"], "Houses"],
+  ["Snow Houses", ["Snow"], "Houses"],
+  ["Fur Clothes", ["Big Animals"], "Clothes"], # also Small Animals ?
+]
+TechPool = BiomeTechs + ResourceTechs.map(&:first)
+
+class Tribe
+  attr_reader :name
+  attr_accessor :energy, :region, :techs
+
+  def initialize(name, region, techs)
+    @name = name
+    @energy = 10.0
+    @region = region
+    @techs = techs
+  end
+
+  def calculate_resources
+    # Needs to be done in speific order
+    @resources = @region.resources.dup.to_set
+    ResourceTechs.each do |tech, inputs, output|
+      next unless @techs.include?(tech)
+      if inputs.all?{|input| @resources.include?(input) }
+        @techs_used << tech
+        @resources_used += inputs.to_set
+        @resources << output
+      end
+    end
+  end
+
+  def energy_from_resources(value, *inputs)
+    return unless inputs.all?{|input| @resources.include?(input) }
+    @energy_gain += value
+    @resources_used += inputs.to_set
+  end
+
+  def calculate_energy_gain
+    @energy_gain = 0.0
+
+    # energy from resources
+    energy_from_resources 2.0, "Fruit"
+    energy_from_resources 1.0, "Fish"
+    energy_from_resources 1.0, "Fish", "Tools"
+    energy_from_resources 3.0, "Fish", "Boats"
+    energy_from_resources 1.0, "Small Animals"
+    energy_from_resources 1.0, "Small Animals", "Tools"
+    energy_from_resources 0.5, "Big Animals"
+    energy_from_resources 2.0, "Big Animals", "Tools"
+    energy_from_resources 1.0, "Beer"
+
+    # base cost
+    @energy_gain -= 1.0
+
+    # cost of extra techs
+    @energy_gain -= 0.2 * @techs.size
+
+    # dangers avoidance resources
+    DangerAvoidance.each do |danger, avoidances|
+      next unless @region.dangers.include?(danger)
+      avoidances.each do |resource, value|
+        next unless @resources.include?(resource)
+        @resources_used << resource
+        @dangers_countered[danger] += value
+      end
+    end
+
+    # clamp to 100% avoidance
+    @dangers_countered = @dangers_countered.to_h{|d,v| [d,v.clamp(0,1)]}
+    @dangers_countered.default = 0.0
+
+    @region.dangers.each do |d|
+      @energy_gain = -1.0 + @dangers_countered.fetch(d, 0.0)
+    end
+
+    # generic adaptations
+    (@techs & @region.biomes.map(&:name)).each do |tech|
+      @techs_used << tech
+      @energy_gain += 1.0
+    end
+
+    @energy_gain = @energy_gain.round(2)
+  end
+
+  def call
+    return if dead?
+    @techs_used = Set[]
+    @dangers_countered = Hash.new(0.0)
+    @resources_used = Set[]
+    calculate_resources
+    calculate_energy_gain
+    @energy += @energy_gain
+    @energy = 20.0 if @energy > 20.0
+  end
+
+  def dead?
+    @energy <= 0.0
+  end
+
+  def unused_techs
+    @techs - @techs_used
+  end
+
+  def report
+    header = "#{@name} in #{@region.name}"
+    if @energy_gain > 0.0
+      puts "#{header}: +#{Colors.green(@energy_gain)}"
+    elsif @energy_gain == 0
+      puts "#{header}: #{Colors.yellow(@energy_gain)}"
+    else
+      puts "#{header}: #{Colors.red(@energy_gain)}"
+    end
+    puts "- T: #{@techs.to_a.map{|t| @techs_used.include?(t) ? Colors.green(t) : t}.join(", ")}"
+    puts "- R: #{@resources.to_a.map{|r| @resources_used.include?(r) ? Colors.green(r) : r}.join(", ")}"
+    puts "- D: #{@region.dangers.to_a.map{|d| @dangers_countered[d] == 1.0 ? Colors.green(d) : @dangers_countered[d] == 0.0 ? Colors.red(d) : Colors.yellow(d)}.join(", ")}"
+  end
+end
+
+class Biome
+  attr_reader :name, :resources, :dangers
+
+  def initialize(name, resources, dangers)
+    @name = name
+    @resources = resources
+    @dangers = dangers
+  end
+end
+
+class Region
+  attr_reader :name, :resources, :dangers, :biomes
+
+  def initialize(*biomes)
+    @biomes = biomes
+    @name = biomes.map(&:name).join(" + ")
+    @resources = biomes.map(&:resources).flatten.to_set
+    @dangers = biomes.map(&:dangers).flatten.to_set
+  end
+end
+
+class Simulation
+  def initialize
+    @biomes = [
+      Biome.new("Rainforest",["Wood", "Fruit", "Bamboo", "Small Animals"], ["Predators"]),
+      Biome.new("Forest", ["Wood", "Fruit", "Small Animals", "Big Animals"], ["Predators"]),
+      Biome.new("Hills", ["Stone", "Wood", "Pastures"], ["Cold"]),
+      Biome.new("Mountain", ["Stone", "Copper Deposits", "Tin Deposits"], ["Cold", "Low Oxygen"]),
+      Biome.new("Tundra", ["Snow", "Big Animals"], ["Cold"]),
+      Biome.new("Desert", ["Sand"], ["Cold", "Heat"]),
+      Biome.new("Coast", ["Fish"], ["Sharks", "Storms"]),
+      Biome.new("River", ["Fish", "Clay"], ["Predators"]),
+      Biome.new("Swamp", ["Fish", "Mud"], ["Predators"]),
+      Biome.new("Savannah", ["Wood", "Small Animals", "Big Animals"], ["Predators"]),
+    ]
+  end
+
+  def random_region
+    Region.new(*@biomes.sample(2))
+  end
+
+  def random_tribe
+    Tribe.new("A Tribe", random_region, TechPool.sample(rand(2..5)).to_set)
+  end
+
+  def call
+    @tribe = random_tribe
+
+    10.times do
+      @tribe.call
+      break if @tribe.unused_techs.empty?
+      @tribe.techs -= [@tribe.unused_techs.to_a.sample]
+      @tribe.techs << (TechPool - @tribe.techs.to_a).sample
+    end
+    @tribe.report
+
+    puts ""
+  end
+end
+
+100.times do
+  Simulation.new.call
+end
