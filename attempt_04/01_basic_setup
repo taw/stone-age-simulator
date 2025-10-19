@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require_relative "counter"
+
+Pop = Struct.new("Pop", :race, :job)
+class Pop
+  def resources(terrain)
+    {
+      "Human" => {
+        "Gatherer" => {
+          "Forest" => Counter.new("food" => 2),
+          "Coast" => Counter.new("food" => 2),
+          "Magical Forest" => Counter.new("food" => 2),
+          "Plains" => Counter.new("food" => 2),
+          "Smamp" => Counter.new("food" => 2),
+        },
+      },
+      "Elf" => {
+        "Gatherer" => {
+          "Forest" => Counter.new("food" => 2),
+          "Coast" => Counter.new("food" => 2),
+          "Magical Forest" => Counter.new("food" => 2, "mana" => 1),
+          "Plains" => Counter.new("food" => 2),
+          "Smamp" => Counter.new("food" => 2),
+        },
+      }
+    }.dig(race, job, terrain.name) || Counter.ew
+  end
+
+  Human_Gatherer = new("Human", "Gatherer")
+  Elf_Gatherer = new("Elf", "Gatherer")
+end
+
+Terrain = Struct.new("Terrain", :name)
+class Terrain
+  Forest = new("Forest")
+  Coast = new("Coast")
+  MagicalForest = new("Magical Forest")
+  Plains = new("Plains")
+  Swamp = new("Smamp")
+end
+
+class Tribe
+  attr_reader :members
+
+  def initialize(*members)
+    @members = members
+  end
+
+  def resources(terrain)
+    @members.map{ _1.resources(terrain) }.sum(Counter.new)
+  end
+end
+
+tribe = Tribe.new(
+  Pop::Human_Gatherer,
+  Pop::Human_Gatherer,
+  Pop::Human_Gatherer,
+  Pop::Elf_Gatherer,
+  Pop::Elf_Gatherer,
+)
+
+pp tribe.resources(Terrain::MagicalForest)
